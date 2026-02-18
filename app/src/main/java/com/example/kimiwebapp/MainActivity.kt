@@ -79,8 +79,6 @@ class MainActivity : AppCompatActivity() {
             
             // 缓存设置
             cacheMode = WebSettings.LOAD_DEFAULT
-            setAppCacheEnabled(true)
-            setAppCachePath(cacheDir.absolutePath)
             
             // 缩放支持
             setSupportZoom(true)
