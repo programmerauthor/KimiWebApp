@@ -3,13 +3,13 @@ name: Build Kimi WebView APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
@@ -50,11 +50,25 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
 
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
+    - name: Upload APK to Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: KimiWebApp-Release
-        path: app/build/outputs/apk/release/*.apk
-
-    - name: List APK files
-      run: ls -lh app/build/outputs/apk/release/
+        files: app/build/outputs/apk/release/app-release.apk
+        tag_name: v1.0.${{ github.run_number }}
+        name: Kimi WebView APK v1.0.${{ github.run_number }}
+        body: |
+          Kimi AI WebView Android App
+          
+          Features:
+          - Full WebView support for https://www.kimi.com/bot
+          - Persistent login state
+          - File upload/download support
+          - Camera, microphone, location permissions
+          - Pull-to-refresh
+          - Back button navigation
+          
+          Install the APK and enjoy Kimi AI on your Android device!
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
