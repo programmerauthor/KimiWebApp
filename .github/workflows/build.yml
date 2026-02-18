@@ -24,6 +24,11 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        gradle-version: 8.2
+
     - name: Cache Gradle packages
       uses: actions/cache@v4
       with:
@@ -39,14 +44,8 @@ jobs:
         echo "=== Project Structure ==="
         ls -la
         echo ""
-        echo "=== Gradlew Permissions ==="
-        ls -la gradlew
-        echo ""
-        echo "=== Gradle Wrapper ==="
-        ls -la gradle/wrapper/
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+        echo "=== App Directory ==="
+        ls -la app/
 
     - name: Decode Keystore
       env:
@@ -62,7 +61,7 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
         echo "Starting Gradle build..."
-        ./gradlew assembleRelease --stacktrace --info
+        gradle assembleRelease --stacktrace --info
         echo "Build completed"
 
     - name: Find and verify APK
