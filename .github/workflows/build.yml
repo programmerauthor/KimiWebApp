@@ -50,12 +50,18 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
 
-    - name: Upload APK to Release
-      uses: softprops/action-gh-release@v1
+    - name: Rename APK
+      run: |
+        mkdir -p output
+        cp app/build/outputs/apk/release/app-release.apk output/KimiWebApp-v1.0.apk
+        ls -lh output/
+
+    - name: Upload APK to GitHub Release
+      uses: ncipollo/release-action@v1
       with:
-        files: app/build/outputs/apk/release/app-release.apk
-        tag_name: v1.0.${{ github.run_number }}
-        name: Kimi WebView APK v1.0.${{ github.run_number }}
+        artifacts: "output/KimiWebApp-v1.0.apk"
+        tag: "v1.0.0"
+        name: "Kimi WebView APK v1.0.0"
         body: |
           Kimi AI WebView Android App
           
@@ -67,8 +73,7 @@ jobs:
           - Pull-to-refresh
           - Back button navigation
           
-          Install the APK and enjoy Kimi AI on your Android device!
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          Download and install the APK to use Kimi AI on your Android device!
+        token: ${{ secrets.GITHUB_TOKEN }}
+        allowUpdates: true
+        replacesArtifacts: true
