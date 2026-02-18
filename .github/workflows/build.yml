@@ -50,16 +50,14 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
 
-    - name: Rename APK
+    - name: Check APK exists
       run: |
-        mkdir -p output
-        cp app/build/outputs/apk/release/app-release.apk output/KimiWebApp-v1.0.apk
-        ls -lh output/
+        ls -la app/build/outputs/apk/release/
 
     - name: Upload APK to GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "output/KimiWebApp-v1.0.apk"
+        artifacts: "app/build/outputs/apk/release/app-release.apk"
         tag: "v1.0.0"
         name: "Kimi WebView APK v1.0.0"
         body: |
