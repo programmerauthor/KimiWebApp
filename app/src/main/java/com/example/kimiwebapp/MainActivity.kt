@@ -18,6 +18,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.webkit.*
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
     private lateinit var swipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var errorText: TextView
     
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var cameraPhotoPath: String? = null
@@ -51,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webView)
         progressBar = findViewById(R.id.progressBar)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
+        errorText = findViewById(R.id.errorText)
 
         // 请求权限
         checkAndRequestPermissions()
@@ -162,14 +165,21 @@ class MainActivity : AppCompatActivity() {
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 super.onReceivedError(view, request, error)
-                val errorMessage = "Error loading page: ${error?.description} (${error?.errorCode})"
+                val errorMessage = "Error: ${error?.description} (Code: ${error?.errorCode})"
                 Log.e(TAG, errorMessage)
-                Toast.makeText(this@MainActivity, errorMessage, Toast.LENGTH_LONG).show()
+                runOnUiThread {
+                    errorText.text = errorMessage
+                    errorText.visibility = View.VISIBLE
+                }
             }
 
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
-                Log.w(TAG, "SSL Error: ${error?.toString()}")
-                // 继续加载，忽略 SSL 错误（仅用于测试）
+                val sslError = "SSL Error: ${error?.toString()}"
+                Log.w(TAG, sslError)
+                runOnUiThread {
+                    errorText.text = sslError + "\n(Proceeding anyway...)"
+                    errorText.visibility = View.VISIBLE
+                }
                 handler?.proceed()
             }
         }
