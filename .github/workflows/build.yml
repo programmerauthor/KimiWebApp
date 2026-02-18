@@ -34,6 +34,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+    - name: Verify project structure
+      run: |
+        echo "=== Project Structure ==="
+        ls -la
+        echo ""
+        echo "=== Gradlew Permissions ==="
+        ls -la gradlew
+        echo ""
+        echo "=== Gradle Wrapper ==="
+        ls -la gradle/wrapper/
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
@@ -42,23 +53,28 @@ jobs:
         ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
       run: |
         echo $ENCODED_KEYSTORE | base64 -d > app/keystore.jks
+        ls -la app/keystore.jks
 
     - name: Build Release APK
       env:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-      run: ./gradlew assembleRelease
+      run: |
+        echo "Starting Gradle build..."
+        ./gradlew assembleRelease --stacktrace --info
+        echo "Build completed"
 
     - name: Find and verify APK
       run: |
         echo "=== APK Output Directory ==="
-        find app/build/outputs -name "*.apk" -type f
+        find . -name "*.apk" -type f 2>/dev/null || echo "No APK found"
         echo ""
-        echo "=== APK Details ==="
-        ls -lh app/build/outputs/apk/release/ || echo "Directory not found"
+        echo "=== Build Directory ==="
+        ls -la app/build/outputs/apk/release/ 2>/dev/null || echo "Directory not found"
 
     - name: Upload APK to GitHub Release
+      if: success()
       uses: ncipollo/release-action@v1
       with:
         artifacts: "app/build/outputs/apk/release/*.apk"
