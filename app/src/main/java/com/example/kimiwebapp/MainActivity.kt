@@ -68,8 +68,8 @@ class MainActivity : AppCompatActivity() {
 
         // 加载 Kimi 网站
         if (savedInstanceState == null) {
-            Log.d(TAG, "Starting to load URL: https://www.kimi.com/bot")
-            webView.loadUrl("https://www.kimi.com/bot")
+            Log.d(TAG, "Starting to load URL: https://kimi.moonshot.cn")
+            webView.loadUrl("https://kimi.moonshot.cn")
         }
     }
 
@@ -80,6 +80,7 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
+            setAppCacheEnabled(true)
             
             // 缓存设置
             cacheMode = WebSettings.LOAD_DEFAULT
