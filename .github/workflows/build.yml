@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -47,55 +47,45 @@ jobs:
         echo "=== App Directory ==="
         ls -la app/
 
-    - name: Decode Keystore
-      env:
-        ENCODED_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 }}
-      run: |
-        echo $ENCODED_KEYSTORE | base64 -d > app/keystore.jks
-        ls -la app/keystore.jks
-
-    - name: Build Release APK
-      env:
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+    - name: Build Debug APK
       run: |
         echo "Starting Gradle build..."
-        gradle assembleRelease --stacktrace
+        gradle assembleDebug --stacktrace
         echo "Build completed"
 
     - name: Verify APK
       run: |
         echo "=== APK Output ==="
-        ls -la app/build/outputs/apk/release/
+        ls -la app/build/outputs/apk/debug/
         echo ""
         echo "=== APK Info ==="
-        ls -lh app/build/outputs/apk/release/*.apk
+        ls -lh app/build/outputs/apk/debug/*.apk
 
     - name: Upload APK as Artifact
       uses: actions/upload-artifact@v4
       with:
         name: KimiWebApp-APK
-        path: app/build/outputs/apk/release/app-release.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
         retention-days: 90
 
-    - name: Upload APK to GitHub Release
+    - name: Create/Update GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "app/build/outputs/apk/release/app-release.apk"
-        tag: "v1.0.0"
-        name: "Kimi WebView APK v1.0.0"
+        artifacts: "app/build/outputs/apk/debug/app-debug.apk"
+        tag: "latest"
+        name: "Kimi WebView APK (Debug)"
         body: |
-          Kimi AI WebView Android App
-          
+          Kimi AI WebView Android App (Debug Build)
+
           Features:
-          - Full WebView support for https://www.kimi.com/bot
+          - Full WebView support for https://kimi.moonshot.cn
           - Persistent login state
           - File upload/download support
           - Camera, microphone, location permissions
           - Pull-to-refresh
           - Back button navigation
-          
+          - App cache enabled
+
           Download and install the APK to use Kimi AI on your Android device!
         token: ${{ secrets.GITHUB_TOKEN }}
         allowUpdates: true
