@@ -50,14 +50,18 @@ jobs:
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: ./gradlew assembleRelease
 
-    - name: Check APK exists
+    - name: Find and verify APK
       run: |
-        ls -la app/build/outputs/apk/release/
+        echo "=== APK Output Directory ==="
+        find app/build/outputs -name "*.apk" -type f
+        echo ""
+        echo "=== APK Details ==="
+        ls -lh app/build/outputs/apk/release/ || echo "Directory not found"
 
     - name: Upload APK to GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "app/build/outputs/apk/release/app-release.apk"
+        artifacts: "app/build/outputs/apk/release/*.apk"
         tag: "v1.0.0"
         name: "Kimi WebView APK v1.0.0"
         body: |
