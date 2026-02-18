@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         // 加载 Kimi 网站
         if (savedInstanceState == null) {
+            Log.d(TAG, "Starting to load URL: https://www.kimi.com/bot")
             webView.loadUrl("https://www.kimi.com/bot")
         }
     }
@@ -116,6 +117,7 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url.toString()
+                Log.d(TAG, "Loading URL: $url")
                 
                 // 处理特殊协议
                 return when {
@@ -144,10 +146,31 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                Log.d(TAG, "Page started loading: $url")
+                progressBar.visibility = View.VISIBLE
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                Log.d(TAG, "Page finished loading: $url")
                 swipeRefreshLayout.isRefreshing = false
+                progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                super.onReceivedError(view, request, error)
+                val errorMessage = "Error loading page: ${error?.description} (${error?.errorCode})"
+                Log.e(TAG, errorMessage)
+                Toast.makeText(this@MainActivity, errorMessage, Toast.LENGTH_LONG).show()
+            }
+
+            override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
+                Log.w(TAG, "SSL Error: ${error?.toString()}")
+                // 继续加载，忽略 SSL 错误（仅用于测试）
+                handler?.proceed()
             }
         }
 
