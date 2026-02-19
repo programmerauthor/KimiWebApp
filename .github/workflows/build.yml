@@ -29,6 +29,10 @@ jobs:
       with:
         gradle-version: 8.2
 
+    - name: Generate temporary keystore
+      run: |
+        keytool -genkey -v           -keystore app/keystore.jks           -alias release           -keyalg RSA           -keysize 2048           -validity 10000           -dname "CN=Android Debug,O=Android,C=US"           -storepass android           -keypass android
+
     - name: Verify project structure
       run: |
         echo "=== Project Structure ==="
@@ -40,7 +44,7 @@ jobs:
     - name: Build Release APK
       run: |
         echo "Starting Gradle Release build..."
-        gradle assembleRelease --stacktrace
+        gradle assembleRelease           -Pandroid.injected.signing.store.file=keystore.jks           -Pandroid.injected.signing.store.password=android           -Pandroid.injected.signing.key.alias=release           -Pandroid.injected.signing.key.password=android           --stacktrace
         echo "Build completed"
 
     - name: Verify APK
@@ -55,17 +59,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: KimiWebApp-Release-APK
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+        path: app/build/outputs/apk/release/app-release.apk
         retention-days: 90
-
-    - name: Rename APK for Release
-      run: |
-        cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/KimiWebApp-release.apk
 
     - name: Create/Update GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "app/build/outputs/apk/release/KimiWebApp-release.apk"
+        artifacts: "app/build/outputs/apk/release/app-release.apk"
         tag: "v1.0.0"
         name: "Kimi WebView APK v1.0.0 (Release)"
         body: |
@@ -78,12 +78,10 @@ jobs:
           - Camera, microphone, location permissions
           - Pull-to-refresh
           - Back button navigation
-          - App cache enabled
 
           📱 Download and install the APK to use Kimi AI on your Android device!
 
-          ⚠️ Note: This is an unsigned release APK. For production distribution, 
-          consider signing the APK with your own keystore.
+          ⚠️ Note: This APK is signed with a temporary development key.
         token: ${{ secrets.GITHUB_TOKEN }}
         allowUpdates: true
         replacesArtifacts: true
