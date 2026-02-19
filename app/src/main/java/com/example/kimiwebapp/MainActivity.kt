@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
 
     // Default URLs - Using the correct URL
     companion object {
-        const val DEFAULT_URL = "https://kimi.moonshot.cn"
+        const val DEFAULT_URL = "https://www.kimi.com/bot"
 
         // Quick shortcuts
         val QUICK_SHORTCUTS = listOf(
