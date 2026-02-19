@@ -80,7 +80,6 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-            setAppCacheEnabled(true)
             
             // 缓存设置
             cacheMode = WebSettings.LOAD_DEFAULT
