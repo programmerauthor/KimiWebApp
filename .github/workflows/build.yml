@@ -33,6 +33,7 @@ jobs:
       run: |
         rm -f app/keystore.jks
         keytool -genkey -v           -keystore app/keystore.jks           -alias release           -keyalg RSA           -keysize 2048           -validity 10000           -dname "CN=Android Debug,O=Android,C=US"           -storepass android           -keypass android
+        ls -la app/keystore.jks
 
     - name: Verify project structure
       run: |
@@ -45,7 +46,7 @@ jobs:
     - name: Build Release APK
       run: |
         echo "Starting Gradle Release build..."
-        gradle assembleRelease           -Pandroid.injected.signing.store.file=keystore.jks           -Pandroid.injected.signing.store.password=android           -Pandroid.injected.signing.key.alias=release           -Pandroid.injected.signing.key.password=android           --stacktrace
+        gradle assembleRelease           -Pandroid.injected.signing.store.file=$PWD/app/keystore.jks           -Pandroid.injected.signing.store.password=android           -Pandroid.injected.signing.key.alias=release           -Pandroid.injected.signing.key.password=android           --stacktrace
         echo "Build completed"
 
     - name: Verify APK
