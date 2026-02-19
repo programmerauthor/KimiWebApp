@@ -1,4 +1,4 @@
-name: Build Kimi WebView APK
+name: Build Kimi WebView APK (Release)
 
 on:
   push:
@@ -29,16 +29,6 @@ jobs:
       with:
         gradle-version: 8.2
 
-    - name: Cache Gradle packages
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-
     - name: Verify project structure
       run: |
         echo "=== Project Structure ==="
@@ -47,37 +37,41 @@ jobs:
         echo "=== App Directory ==="
         ls -la app/
 
-    - name: Build Debug APK
+    - name: Build Release APK
       run: |
-        echo "Starting Gradle build..."
-        gradle assembleDebug --stacktrace
+        echo "Starting Gradle Release build..."
+        gradle assembleRelease --stacktrace
         echo "Build completed"
 
     - name: Verify APK
       run: |
         echo "=== APK Output ==="
-        ls -la app/build/outputs/apk/debug/
+        ls -la app/build/outputs/apk/release/
         echo ""
         echo "=== APK Info ==="
-        ls -lh app/build/outputs/apk/debug/*.apk
+        ls -lh app/build/outputs/apk/release/*.apk
 
     - name: Upload APK as Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: KimiWebApp-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: KimiWebApp-Release-APK
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 90
+
+    - name: Rename APK for Release
+      run: |
+        cp app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/KimiWebApp-release.apk
 
     - name: Create/Update GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "app/build/outputs/apk/debug/app-debug.apk"
-        tag: "latest"
-        name: "Kimi WebView APK (Debug)"
+        artifacts: "app/build/outputs/apk/release/KimiWebApp-release.apk"
+        tag: "v1.0.0"
+        name: "Kimi WebView APK v1.0.0 (Release)"
         body: |
-          Kimi AI WebView Android App (Debug Build)
+          🚀 Kimi AI WebView Android App (Release Build)
 
-          Features:
+          ✨ Features:
           - Full WebView support for https://kimi.moonshot.cn
           - Persistent login state
           - File upload/download support
@@ -86,7 +80,10 @@ jobs:
           - Back button navigation
           - App cache enabled
 
-          Download and install the APK to use Kimi AI on your Android device!
+          📱 Download and install the APK to use Kimi AI on your Android device!
+
+          ⚠️ Note: This is an unsigned release APK. For production distribution, 
+          consider signing the APK with your own keystore.
         token: ${{ secrets.GITHUB_TOKEN }}
         allowUpdates: true
         replacesArtifacts: true
