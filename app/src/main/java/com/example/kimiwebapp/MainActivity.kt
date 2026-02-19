@@ -26,7 +26,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -605,7 +605,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url, favicon)
+                super.onPageFinished(view, url)
                 swipeRefreshLayout.isRefreshing = false
                 progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
