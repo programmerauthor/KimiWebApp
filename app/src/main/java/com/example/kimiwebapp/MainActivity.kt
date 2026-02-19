@@ -35,16 +35,13 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import java.net.URL
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Kimi WebView App - Enhanced Version
  * 
  * Features:
- * - Default URL: https://www.kimi.com/bot
+ * - Default URL: https://kimi.moonshot.cn
  * - Custom URL support with SharedPreferences
  * - Quick navigation shortcuts
  * - Browse history
@@ -78,14 +75,13 @@ class MainActivity : AppCompatActivity() {
     private val KEY_DESKTOP_MODE = "desktop_mode"
     private val KEY_DARK_MODE = "dark_mode"
 
-    // Default URLs
+    // Default URLs - Using the correct URL
     companion object {
-        const val DEFAULT_URL = "https://www.kimi.com/bot"
-        const val FALLBACK_URL = "https://kimi.moonshot.cn"
+        const val DEFAULT_URL = "https://kimi.moonshot.cn"
 
         // Quick shortcuts
         val QUICK_SHORTCUTS = listOf(
-            Pair("Kimi", "https://www.kimi.com/bot"),
+            Pair("Kimi", "https://kimi.moonshot.cn"),
             Pair("ChatGPT", "https://chat.openai.com"),
             Pair("Claude", "https://claude.ai"),
             Pair("Gemini", "https://gemini.google.com"),
@@ -100,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     private var isDesktopMode = false
     private var isFullscreen = false
 
-    @SuppressLint("SetJavaScriptEnabled", "MissingInflatedId")
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -134,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         // Load default or saved URL
         if (savedInstanceState == null) {
             loadDefaultUrl()
+        } else {
+            webView.restoreState(savedInstanceState)
         }
     }
 
@@ -366,11 +364,9 @@ class MainActivity : AppCompatActivity() {
             put("timestamp", System.currentTimeMillis())
         }
 
-        // Add to beginning
         val newHistory = JSONArray()
         newHistory.put(item)
 
-        // Add existing items (limit to 100)
         for (i in 0 until minOf(history.length(), 99)) {
             newHistory.put(history.getJSONObject(i))
         }
@@ -418,7 +414,7 @@ class MainActivity : AppCompatActivity() {
         val userAgent = if (isDesktopMode) {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         } else {
-            null // Reset to default
+            null
         }
 
         webView.settings.userAgentString = userAgent
@@ -430,8 +426,6 @@ class MainActivity : AppCompatActivity() {
     private fun toggleDarkMode() {
         val isDarkMode = prefs.getBoolean(KEY_DARK_MODE, false)
         prefs.edit().putBoolean(KEY_DARK_MODE, !isDarkMode).apply()
-
-        // Recreate activity to apply theme
         recreate()
     }
 
@@ -443,7 +437,6 @@ class MainActivity : AppCompatActivity() {
             fabHome.visibility = View.GONE
             supportActionBar?.hide()
 
-            // Hide system UI
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 window.insetsController?.let {
                     it.hide(android.view.WindowInsets.Type.statusBars() or 
@@ -463,7 +456,6 @@ class MainActivity : AppCompatActivity() {
             fabHome.visibility = View.VISIBLE
             supportActionBar?.show()
 
-            // Show system UI
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or 
                         android.view.WindowInsets.Type.navigationBars())
@@ -530,7 +522,7 @@ class MainActivity : AppCompatActivity() {
                 • 夜间模式
                 • 全屏浏览
 
-                默认网址：https://www.kimi.com/bot
+                默认网址：https://kimi.moonshot.cn
             """.trimIndent())
             .setPositiveButton("确定", null)
             .show()
@@ -553,7 +545,7 @@ class MainActivity : AppCompatActivity() {
             allowContentAccess = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             saveFormData = true
-            setGeolocationEnabled(true)
+            javaScriptCanOpenWindowsAutomatically = true
 
             // Apply desktop mode if enabled
             if (prefs.getBoolean(KEY_DESKTOP_MODE, false)) {
@@ -601,6 +593,7 @@ class MainActivity : AppCompatActivity() {
             override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 progressBar.visibility = View.VISIBLE
+                progressBar.progress = 0
                 urlInput.setText(url)
             }
 
@@ -610,13 +603,14 @@ class MainActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
                 CookieManager.getInstance().flush()
 
-                // Add to history
                 url?.let { addToHistory(it, view?.title ?: "") }
             }
 
             override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
                 super.onReceivedError(view, request, error)
-                Log.e(TAG, "Error: ${error?.description}")
+                Log.e(TAG, "Error loading page: ${error?.description}")
+                progressBar.visibility = View.GONE
+                swipeRefreshLayout.isRefreshing = false
             }
 
             override fun onReceivedSslError(view: WebView?, handler: SslErrorHandler?, error: android.net.http.SslError?) {
@@ -627,7 +621,9 @@ class MainActivity : AppCompatActivity() {
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 progressBar.progress = newProgress
-                progressBar.visibility = if (newProgress == 100) View.GONE else View.VISIBLE
+                if (newProgress == 100) {
+                    progressBar.visibility = View.GONE
+                }
             }
 
             override fun onShowFileChooser(
