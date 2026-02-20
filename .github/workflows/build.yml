@@ -14,6 +14,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -29,10 +31,27 @@ jobs:
       with:
         gradle-version: 8.2
 
+    - name: Generate version info
+      id: version
+      run: |
+        VERSION_DATE=$(date +'%Y%m%d')
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        VERSION="v1.0.${VERSION_DATE}-${SHORT_SHA}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version: $VERSION"
+
     - name: Generate temporary keystore
       run: |
         rm -f app/keystore.jks
-        keytool -genkey -v           -keystore app/keystore.jks           -alias release           -keyalg RSA           -keysize 2048           -validity 10000           -dname "CN=Android Debug,O=Android,C=US"           -storepass android           -keypass android
+        keytool -genkey -v \
+          -keystore app/keystore.jks \
+          -alias release \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -dname "CN=Android Debug,O=Android,C=US" \
+          -storepass android \
+          -keypass android
         ls -la app/keystore.jks
 
     - name: Verify project structure
@@ -46,7 +65,12 @@ jobs:
     - name: Build Release APK
       run: |
         echo "Starting Gradle Release build..."
-        gradle assembleRelease           -Pandroid.injected.signing.store.file=$PWD/app/keystore.jks           -Pandroid.injected.signing.store.password=android           -Pandroid.injected.signing.key.alias=release           -Pandroid.injected.signing.key.password=android           --stacktrace
+        gradle assembleRelease \
+          -Pandroid.injected.signing.store.file=$PWD/app/keystore.jks \
+          -Pandroid.injected.signing.store.password=android \
+          -Pandroid.injected.signing.key.alias=release \
+          -Pandroid.injected.signing.key.password=android \
+          --stacktrace
         echo "Build completed"
 
     - name: Verify APK
@@ -57,33 +81,51 @@ jobs:
         echo "=== APK Info ==="
         ls -lh app/build/outputs/apk/release/*.apk
 
+    - name: Rename APK with version
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/KimiWebApp-${VERSION}.apk"
+        ls -lh app/build/outputs/apk/release/*.apk
+
     - name: Upload APK as Artifact
       uses: actions/upload-artifact@v4
       with:
         name: KimiWebApp-Release-APK
-        path: app/build/outputs/apk/release/app-release.apk
+        path: app/build/outputs/apk/release/KimiWebApp-*.apk
         retention-days: 90
 
-    - name: Create/Update GitHub Release
+    - name: Create Git Tag
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git tag -a "$VERSION" -m "Release $VERSION"
+        git push origin "$VERSION"
+
+    - name: Create GitHub Release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "app/build/outputs/apk/release/app-release.apk"
-        tag: "v1.0.0"
-        name: "Kimi WebView APK v1.0.0 (Release)"
+        artifacts: "app/build/outputs/apk/release/KimiWebApp-*.apk"
+        tag: "${{ steps.version.outputs.version }}"
+        name: "Kimi WebView APK ${{ steps.version.outputs.version }}"
         body: |
-          🚀 Kimi AI WebView Android App (Release Build)
-
-          ✨ Features:
-          - Full WebView support for https://kimi.moonshot.cn
+          ## 🚀 Kimi AI WebView Android App
+          
+          **Version:** ${{ steps.version.outputs.version }}
+          
+          ### ✨ Features
+          - Full WebView support for https://www.kimi.com/bot
           - Persistent login state
           - File upload/download support
           - Camera, microphone, location permissions
           - Pull-to-refresh
           - Back button navigation
-
-          📱 Download and install the APK to use Kimi AI on your Android device!
-
-          ⚠️ Note: This APK is signed with a temporary development key.
+          
+          ### 📱 Download
+          Download the APK file below and install it on your Android device.
+          
+          ### ⚠️ Note
+          This APK is signed with a temporary development key.
         token: ${{ secrets.GITHUB_TOKEN }}
-        allowUpdates: true
-        replacesArtifacts: true
+        allowUpdates: false
+        replacesArtifacts: false
